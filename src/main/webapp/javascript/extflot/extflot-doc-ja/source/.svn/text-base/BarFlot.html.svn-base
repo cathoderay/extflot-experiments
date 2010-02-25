@@ -1,0 +1,119 @@
+<html>
+<head>
+  <title>The source code</title>
+    <link href="../resources/prettify/prettify.css" type="text/css" rel="stylesheet" />
+    <script type="text/javascript" src="../resources/prettify/prettify.js"></script>
+</head>
+<body  onload="prettyPrint();">
+    <pre class="prettyprint lang-js">/* $Id:$
+ * vim:sw=2:ts=8:sts=2:et:ft=javascript
+ * Released under the MIT license or Ext Open Source License by NCS, December 2008
+ */
+
+<div id="cls-Ext.ux.BarFlot"></div>/**
+ * @class Ext.ux.BarFlot
+ * @extends Ext.ux.Flot
+ * 棒グラフ専用の Flot です。<br>
+ * 複数の系列をひとまとめにして、データごとに値をまとめて与えることができます。
+<pre>
+data: [{
+  name:  <String>,
+  label: <String>,
+  total: <Number>,
+  rect:  <Number>,
+  xtrap: <Number>,
+  ytrap: <Number>
+},{
+...
+}]
+</pre>
+ *
+ * data には name または label というメンバが必要です。
+ * これが X 軸に表示される目盛ラベル (tick) になります。
+ * 
+<pre>
+series: [
+ { name: 'total', label: 'Total',        dataIndex: 0 },
+ { name: 'rect',  label: 'Rectangles',   dataIndex: 1 },
+ { name: 'xtrap', label: 'X-Trapezoids', dataIndex: 2 },
+ { name: 'ytrap', label: 'Y-Trapezoids', dataIndex: 3 },
+],
+</pre>
+ * 系列設定には dataIndex という拡張メンバを与えてください。
+ * 対象のデータ中のバーの並び順序を指定します。
+ * 指定がなかった場合は、series array の index になります。
+ */
+Ext.ux.BarFlot = Ext.extend(Ext.ux.Flot, {
+  <div id="cfg-Ext.ux.BarFlot-data"></div>/**
+   * @cfg {Array} data
+   * クラスの説明を参照してください。
+   */
+  <div id="cfg-Ext.ux.BarFlot-baseSeries"></div>/**
+   * @cfg {Object} baseSeries
+   */
+  baseSeries: {bars:{ show: true, align: 'center' }},
+
+  <div id="cfg-Ext.ux.BarFlot-tooltip"></div>/**
+   * @cfg {Bool/String/Object} tooltip
+   * <pre>'<div id="{tipId}">{label}={1}</div>'</pre> になっています
+   */
+  tooltip: '<div id="{tipId}">{label}={1}</div>',
+
+	// private
+	initComponent: function() {
+		this.setupFlotOptions();
+		Ext.ux.BarFlot.superclass.initComponent.call(this);
+	},
+
+	// private
+	setupData: function(data, series) {
+		// バーの幅を決定
+		var bw = 1.0 / series.length * 0.6;
+		var center = series.length / 2;
+    this.baseSeries.bars.barWidth = bw;
+
+		for (var i = 0, len = data.length; i < len; i++) {
+			var d = data[i], _d = [], key;
+			for (key in d) {
+				for (var j = 0, n = series.length; j < n; j++) {
+					var s = series[j];
+					if (s.name == key) {
+            var idx = series[j].dataIndex;
+            if (typeof idx == 'undefined') { idx = j; }
+						var pos = i + bw * (idx - center + 0.5);
+						s.data = s.data || [];
+						s.data.push([pos, d[key]]);
+					}
+          s.label = s.label || d.label || d.name || d.dataIndex;
+				}
+			}
+		}
+    return series;
+	},
+
+  // private
+	setupFlotOptions: function() {
+		var xticks = [];
+		for (var i = 0, len = this.data.length; i < len; i++) {
+			var d = this.data[i];
+			xticks.push([i, d.label || d.name || d.dataIndex]);
+		}
+    Ext.applyIf(this, {
+			xaxis: {
+				ticks: xticks,
+				min: -0.5,
+				max: i-0.5
+			},
+			yaxis: {
+				ticks: 10,
+				min: 0
+				//max: ????
+			}
+		});
+	}
+});
+Ext.reg('barflot', Ext.ux.BarFlot);
+
+</pre>    
+</body>
+</html>

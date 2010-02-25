@@ -1,0 +1,87 @@
+<html>
+<head>
+  <title>The source code</title>
+    <link href="../resources/prettify/prettify.css" type="text/css" rel="stylesheet" />
+    <script type="text/javascript" src="../resources/prettify/prettify.js"></script>
+</head>
+<body  onload="prettyPrint();">
+    <pre class="prettyprint lang-js">/* $Id:$
+ * vim:sw=2:ts=8:sts=2:et:ft=javascript
+ * Released under the MIT license or Ext Open Source License by NCS, December 2008
+ */
+
+<div id="cls-Ext.ux.PieFlot"></div>/**
+ * @class Ext.ux.PieFlot
+ * @extends Ext.ux.Flot
+ * 円グラフ専用の Flot です。<br>
+ * 複数の系列をひとまとめにして、データごとに値をまとめて与えることができます。
+<pre>
+data: [{
+  label: <String>,
+  data: [[<id>, <value>], ...]
+},{
+...
+}]
+</pre>
+ *
+ * data の X 値 (data[i][j][0]) には、その系列の ID を入れますが、
+ * これは内部的には無視され、 Y 値 (data[i][j][1]) の和が
+ * その系列の値になります。
+ *
+ * 対象の系列が円グラフで占める割合は、この各系列の値の比になります。
+ * 
+<pre>
+series: [
+  { label: 'Niveau A', data: [[0,2]]},  # 40%
+  { label: 'Niveau B', data: [[1,2]]},  # 40%
+  { label: 'Niveau C', data: [[2,1]]},  # 20%
+  { label: 'Niveau D', data: [[3,0]]}   #  0%
+],
+</pre>
+ *
+ * 円グラフは操作の必要がないので、デフォルトのコンテキストメニューは
+ * プロパティのみになっています。
+ */
+Ext.ux.PieFlot = Ext.extend(Ext.ux.Flot, {
+
+  <div id="cfg-Ext.ux.PieFlot-selection"></div>/**
+   * @cfg {Object} selection
+   * mode が null になっています。
+   */
+  selection: { mode: null },
+
+  <div id="cfg-Ext.ux.PieFlot-tooltip"></div>/**
+   * @cfg {Bool/String/Object} tooltip
+   * false になっています。
+   */
+  tooltip: false,
+
+  <div id="prop-Ext.ux.PieFlot-contextMenu"></div>/**
+   * @property contextMenu
+   * @type Array
+   * property のみになっています。
+   */
+  contextMenu: [{
+    name: 'property',
+    text: _('Property'),
+    iconCls: 'puzzle',
+    handler: function() { this.showProperty(); }
+  }],
+
+  <div id="prop-Ext.ux.PieFlot-datapointContextMenu"></div>/**
+   * @property datapointContextMenu
+   * @type Array 
+   * 無効になっています
+   */
+  datapointContextMenu: false,
+
+	// private
+	initComponent: function() {
+		Ext.ux.PieFlot.superclass.initComponent.call(this);
+	}
+});
+Ext.reg('pieflot', Ext.ux.PieFlot);
+
+</pre>    
+</body>
+</html>

@@ -1,0 +1,142 @@
+<html>
+<head>
+  <title>The source code</title>
+    <link href="../resources/prettify/prettify.css" type="text/css" rel="stylesheet" />
+    <script type="text/javascript" src="../resources/prettify/prettify.js"></script>
+</head>
+<body  onload="prettyPrint();">
+    <pre class="prettyprint lang-js">/* $Id:$
+ * vim:sw=2:ts=8:sts=2:et:ft=javascript
+ * Released under the MIT license or Ext Open Source License by NCS, December 2008
+ */
+
+<div id="cls-Ext.ux.CsvFlot"></div>/**
+ * @class Ext.ux.CsvFlot
+ * @extends Ext.ux.Flot
+ * CSV をグラフ表示するの Flot です。<br>
+ *
+ * <li>data が String の場合
+ *  CSV のパース前の文字列だとみなし、CSV としてパースを行います
+ *  パース後は下記の Array 指定と同様に扱われます
+ * </li>
+ *
+ * <li>data が Array の場合
+ *  CSV のパース後の array だとみなします。
+ *  [[0, 1, 2, 3], [4, 5, 6], [7, 8, 9],...]
+ * </li>
+ *
+ * <li>data が Object の場合
+ * 設定および CSV データを含むオブジェクトだとみなされます。
+ * 下記のメンバが this に対して優先的に用いられます。
+ *   <ul>
+ *   <li>header
+ *   <li>xColumn
+ *   <li>type
+ *   <li>sortType
+ *   <li>data
+ *   </ul>
+ * </li>
+ */
+Ext.ux.CsvFlot = Ext.extend(Ext.ux.Flot, {
+  <div id="cfg-Ext.ux.CsvFlot-data"></div>/**
+   * @cfg {String/Array/Object} data
+   * クラスの説明を参照してください。
+   */
+  <div id="cfg-Ext.ux.CsvFlot-header"></div>/**
+   * @cfg {Bool/String/Array} header
+   * 系列の元となるヘッダ行です。
+   * <li>true の場合、与えられた data の 1行目(0) がヘッダ行とみなされます</li>
+   * <li>String の場合 CSV 行として解釈され、上記 1 行目と同じ扱いとなります</li>
+   * <li>Array の場合ヘッダ array を直接指定します</li>
+   */
+  header: true,
+  <div id="cfg-Ext.ux.CsvFlot-xColumn"></div>/**
+   * @cfg {Number} xColumn x 軸に設定するカラム
+   * header のメンバ名、もしくはカラムのインデックスで指定します
+   */
+  xColumn: 0,
+
+	// private
+	initComponent: function() {
+		Ext.ux.CsvFlot.superclass.initComponent.call(this);
+	},
+
+  // private
+  setupData: function(data, series) {
+    var header   = this.header;
+    var xColumn  = this.xColumn;
+    var type     = this.type;
+    var sortType = this.sortType;
+    if (!data || typeof data.length == 'undefined') {
+      header   = data.header   || header;
+      xColumn  = data.xColumn  || xColumn;
+      type     = data.type     || type;
+      sortType = data.sortType || sortType;
+      data     = data.data;
+    }
+    if (typeof data == 'string') { data = Csv.parse(data); }
+    var i, len, j, dlen, slen, idx;
+
+    // 系列がない場合は CSV の行頭をヘッダ行だとする
+    if (typeof header == 'boolean') {
+      if (header) {header = data.shift();}
+    } else if (typeof header == 'string') {
+      header = Csv.parse(header)[0];
+    }
+
+    // TODO Ext.ux.data.CsvReader を作ること
+    var store = new Ext.data.JsonStore({});
+    var store_data = [], fields = [];
+    for (i = 0, len = header.length; i < len; i++) {
+      fields.push({
+        name: header[i],
+        type: type,
+        sortType: sortType
+      });
+    }
+    for (i = 0, len = data.length; i < len; i++) {
+      var d = {};
+      for (j = 0, dlen = data[i].length; j < dlen; j++) {
+        idx = header[j] || j;
+        d[idx] = data[i][j];
+      }
+      store_data.push(d);
+    }
+    store.loadData({
+      metaData: {
+        root: 'data',
+        totalProperty: 'total',
+        successProperty: 'success',
+        fields: fields
+      },
+      data:  store_data,
+      total: store_data.length,
+      success: true
+    });
+    store.sort(xColumn, 'ASC');
+
+    // Flot series に変換
+    var _series = this.createSeries(store, xColumn);
+    if (!series) {
+      series = _series;
+    } else {
+      for (i = 0, len = series.length; i < len; i++) {
+        for (j = 0, slen = _series.length; j < slen; j++) {
+          idx = series[i].dataIndex || series[i].label;
+          if (idx == _series[j].dataIndex) {
+            series[i].data = _series[j].data;
+            break;
+          }
+        }
+      }
+    }
+    this.header  = header;
+    this.xColumn = xColumn;
+    //this.data    = data;
+    return series;
+  }
+});
+Ext.reg('csvflot', Ext.ux.CsvFlot);
+</pre>    
+</body>
+</html>

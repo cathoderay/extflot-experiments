@@ -1,0 +1,205 @@
+<html>
+<head>
+  <title>The source code</title>
+    <link href="../resources/prettify/prettify.css" type="text/css" rel="stylesheet" />
+    <script type="text/javascript" src="../resources/prettify/prettify.js"></script>
+</head>
+<body  onload="prettyPrint();">
+    <pre class="prettyprint lang-js">/* $Id: GetText.js 3522 2009-02-26 06:11:28Z suzuki $
+ * vim:sw=2:ts=8:sts=2:et:ft=javascript
+ *
+ * 以下から拝借して、prototype.js 依存から Ext 依存にしました。
+ * http://blog.bz2.jp/archives/2006/05/javascript-5.html 
+ *
+ * ただし、bindTextDomain を使用してサーバから動的に取得せず、
+ * 直接 <domain>.js をインクルードし setText を用いる場合は、
+ * Ext は必要ありません。
+ */
+
+<div id="cls-Locale"></div>/**
+ * @class Locale
+ * ロケールを管理するオブジェクト
+ * 一度に 1 つの言語しか使用できません。
+ * @singleton
+ * @constructor
+ */
+Locale = new (function() {
+
+	<div id="prop-Locale-LC_COLLATE"></div>/**
+   * @property LC_COLLATE
+   * @type String
+	 * ロケールの設定環境変数
+   */
+  this.LC_COLLATE  = 'C';
+  <div id="prop-Locale-LC_CTYPE"></div>/**
+   * @property LC_CTYPE
+   * @type String
+	 * ロケールの設定環境変数
+   */
+  this.LC_CTYPE    = 'C';
+  <div id="prop-Locale-LC_MESSAGES"></div>/**
+   * @property LC_MESSAGES
+   * @type String
+	 * ロケールの設定環境変数
+   */
+  this.LC_MESSAGES = 'C';
+  <div id="prop-Locale-LC_MONETARY"></div>/**
+   * @property LC_MONETARY
+   * @type String
+	 * ロケールの設定環境変数
+   */
+  this.LC_MONETARY = 'C';
+  <div id="prop-Locale-LC_NUMERIC"></div>/**
+   * @property LC_NUMERIC
+   * @type String
+	 * ロケールの設定環境変数
+   */
+  this.LC_NUMERIC  = 'C';
+  <div id="prop-Locale-LC_TIME"></div>/**
+   * @property LC_TIME
+   * @type String
+	 * ロケールの設定環境変数
+	 */
+  this.LC_TIME     = 'C';
+
+	<div id="prop-Locale-suffix"></div>/**
+	 * @property suffix
+	 * @type suffix
+	 * json 化された po ファイルの拡張子
+	 */
+  this.suffix = 'json';
+
+	// private メッセージのハッシュ
+  this._messages = {};
+
+	<div id="method-Locale-setLocale"></div>/**
+	 * ロケールを設定する。
+   * bindTextDomain で使います。
+	 * @param {String} category セットするカテゴリ
+	 * @param {String} locale   セットするロケール
+   * @return {String} セットしたロケール
+	 */
+  this.setLocale = function(category, locale) {
+    switch (category) {
+    case 'LC_ALL':
+      this['LC_COLLATE']  = locale;
+      this['LC_CTYPE']    = locale;
+      this['LC_MESSAGES'] = locale;
+      this['LC_MONETARY'] = locale;
+      this['LC_NUMERIC']  = locale;
+      this['LC_TIME']     = locale;
+      break;
+    case 'LC_COLLATE':
+    case 'LC_CTYPE':
+    case 'LC_MESSAGES':
+    case 'LC_MONETARY':
+    case 'LC_NUMERIC':
+    case 'LC_TIME':
+      this[category] = locale;
+      break;
+    default:
+      return false;
+    }
+    return locale;
+  };
+
+	<div id="method-Locale-setSuffix"></div>/**
+	 * ロケールファイルの拡張子を設定する
+	 * @param {String} suffix 設定する新しい拡張子
+	 */
+  this.setSuffix = function(suffix) {
+    this.suffix = suffix;
+  };
+
+	<div id="method-Locale-bindTextDomain"></div>/**
+	 * ロケールファイルを読み込む
+	 * <pre><directory>/<locale>/LC_MESSAGES/<domain>.<suffix></pre>
+   * TODO 動いてません。
+   *      ロケール情報取得時に、全情報を更新する処理が必要です。
+   *      最も単純な発想だと _() の呼び出し元をすべてハッシュに記憶しておいて、
+   *      一周して更新する、という感じになるわけですが、
+   *      きちんとイベントを定義したほうがよいような気もします。。。
+   *      いずれにせよかなりめんどくさい
+	 * @param {domain}    domain 読み込むロケールドメイン
+	 * @param {directory} directory 読み込む URL
+	 */
+  this.bindTextDomain = function(domain, directory) {
+    this._messages = {};
+    url = directory+'/'+this.LC_MESSAGES+'/LC_MESSAGES/'+domain+'.'+this.suffix;
+
+    // 通信には Ext の ScriptTagProxy を使う。
+    // データは単純に [[<en>, <ja>], ...] の配列でうけとり、ハッシュに変換する
+    var proxy = new Ext.data.ScriptTagProxy({url: url});
+    proxy.on('loadexception', function(me, obj, res, err) {
+      // TODO proxy を上からもらうか
+      console.log(err);
+    });
+    proxy.load({}, new Ext.data.ArrayReader(), function(ret, arg, success) {
+      if (success) {
+        var records = ret.records;
+        for (var i = 0, len = records.length; i < len; i++) {
+          var rec = records[i];
+          this._messages[rec.get(0)] = rec.get(1);
+        }
+      }
+    }, this);
+  };
+
+  <div id="method-Locale-setText"></div>/**
+   * ロケールハッシュに登録する
+   * 同一のキーワードがあった場合は、上書きされます。
+   * 通常は <pre><locale>/LC_MESSAGES/<domain>.js</pre> 内で呼び出されます。
+   * @param {String} locale_array [[<en>, <locale_text>], ...] の配列
+   * @param {String/Array} locale セットする言語
+   * @return {Bool} 登録されたか
+   */
+  this.setText = function(locale_array, locale) {
+    var lang = navigator.language || navigator.userLanguage || navigator.systemLanguage;
+    if (typeof locale == "string") { locale = locale.split(','); }
+    if (typeof locale != "undefined" && typeof locale.indexOf == "function" && locale.indexOf(lang) < 0) { return false; }
+    for (var i = 0, len = locale_array.length; i < len; i++) {
+      var loc = locale_array[i];
+      this._messages[loc[0]] = loc[1];
+    }
+    return true;
+  };
+
+	<div id="method-Locale-getText"></div>/**
+	 * 翻訳する
+	 * ハッシュを引くだけです。
+   * @param {String} str 翻訳前文字列
+   * @return {String} 翻訳後文字列
+	 */
+  this.getText = function(str) {
+    return this._messages[str] || str;
+  };
+
+	<div id="method-Locale-getTextNoop"></div>/**
+	 * キーワード登録する
+	 * gettext コンパイル時にのみ用い、実際の翻訳は getText にて行われます。
+   * @param {String} str GetText に登録するキーワード
+   * @return {String} 登録されたキーワード
+	 */
+  this.getTextNoop = function(str) {
+    return str;
+  };
+})();
+
+<div id="method-Locale-_"></div>/**
+ * 一般的な gettext のエイリアス
+ * 翻訳する。
+ * @param {String} 翻訳前文字列
+ * @return {String} 翻訳後文字列
+ */
+_ = function(str) { return Locale.getText(str); };
+
+<div id="method-Locale-N_"></div>/**
+ * 一般的な gettext のエイリアス
+ * 翻訳キーワードを定義するだけ、翻訳そのものはしない。
+ * @param {String} 登録するキーワード
+ * @return {String} 登録後キーワード
+ */
+N_ = function(str) { return Locale.getTextNoop(str); };
+</pre>    
+</body>
+</html>
