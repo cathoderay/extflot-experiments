@@ -22,17 +22,10 @@ Ext.onReady(function() {
         height: 300,
         shadowSize: 0,
         points: { radius: 1, fill: false },
-        xaxis: {
-            labelHeight: 40,
-            tickFormatter: function (val, axis) {
-                var hour = String(val).substring(8);
-                if (hour != "00") 
-                    return hour + ":00";
-                else
-                    return String(val).substring(6, 8);
-        }}, 
+        xaxis: { labelHeight: 40, mode: "time" }, 
         yaxis: { labelWidth: 20 },
-        lines: { show: true, lineWidth: 1, fill: true },
+        selection: {mode: null},
+        lines: { steps: true, show: true, lineWidth: 0.5, fill: true },
         grid:{ borderWidth:1, borderColor:"#aaa",markings: Ext.ux.Flot.grid.weekendMarkings},
         labelBoxBorderColor: { color: "#000" },
         series: []
@@ -55,8 +48,10 @@ Ext.onReady(function() {
         series: [],
         listeners: {
             plotselected: function(flot, event, ranges, item) {
+                console.debug("sending JSON request")
                 mainStore.setBaseParam("from", Math.floor(ranges.xaxis.from));
                 mainStore.setBaseParam("to", Math.floor(ranges.xaxis.to));
+                mainStore.setBaseParam("resolution", parseInt(mainFlot.getBox().width/2));
                 mainStore.load();
             }
         }
@@ -92,7 +87,6 @@ Ext.onReady(function() {
 
     var birdViewStore = new Ext.data.Store({
         proxy: new Ext.data.HttpProxy({
-            //url: "/rest/history",
             url: "/flot_test.json",
             method: "GET"            
         }),
@@ -120,14 +114,14 @@ Ext.onReady(function() {
     });
 
     var win = new Ext.Window({
-        title: 'CPU',
         id: 'cpu',
-        layout: 'column',
         width: 600,
+        title: 'CPU',
+        layout: 'column',
+        items: [mainFlot, birdViewFlot],
         defaults: {
             cls: 'x-panel-body'
-        },
-        items: [mainFlot, birdViewFlot]
+        }
     });
     win.show();
 });
