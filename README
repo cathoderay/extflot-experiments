@@ -6,4 +6,5 @@ Some experiments with extflot...
 Running
 =======
 1. mvn jetty:run
-2. Go to your browser at -> http://localhost:1212
+2. Go to your browser at -> http://localhost:1212 
+(the port is defined in pom.xml)
